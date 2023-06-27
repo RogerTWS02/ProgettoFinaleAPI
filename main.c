@@ -44,8 +44,6 @@ void input_handler(char *input){
 void aggiungi_stazione(char *input, stazione root_tree_stazioni){
     //TODO
 }
-    
-}
 
 //DEMOLISCE STAZIONE
 void demolisci_stazione(char *input){
