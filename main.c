@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 char buffer[5200];
@@ -31,19 +32,19 @@ void input_reader(){
 //Gestisce i comandi in input chiamando le funzioni giuste in base al comando iniettato
 void input_handler(char *input){
     if(input[0]=='a'&&input[9]=='s'){
-        aggiungi_stazione(&buffer);
+        aggiungi_stazione();
         return;}
     if(input[0]=='a'&&input[9]=='a'){
-        aggiungi_auto(&buffer);
+        aggiungi_auto_B();
         return;}
     if(input[0]=='d'){
-        demolisci_stazione(&buffer);
+        demolisci_stazione();
         return;};
     if(input[0]=='r'){
-        rottama_auto(&buffer);
+        rottama_auto();
         return;}
     if(input[0]=='p'){
-        pianifica_percorso(&buffer);
+        pianifica_percorso();
         return;}
 }
 
@@ -58,29 +59,30 @@ unsigned int estrai_valore(char *input){
 }
 
 //AGGIUNGE STAZIONE
-void aggiungi_stazione(char *input){
+void aggiungi_stazione(){
+    int i = 0;
     input_placeholder = 18;
-    unsigned int valore_distanza = estrai_valore(&buffer);
+    unsigned int valore = estrai_valore(&buffer);
     stazione prec = NULL;
     stazione curr = root_tree_stazioni;
     while(curr != NULL){
         prec = curr;
-        if(valore_distanza == curr->distanza){
+        if(valore == curr->distanza){
             printf("non aggiunta\n");
             return;}
-        if(valore_distanza < curr->distanza)
+        if(valore < curr->distanza)
             curr = curr->figlio_sx;
         else
             curr = curr->figlio_dx;
     }
     curr = malloc(sizeof(struct stazione));
-    curr->distanza = valore_distanza;
+    curr->distanza = valore;
     curr->parco_macchine = NULL;
     curr->figlio_dx = NULL;
     curr->figlio_sx = NULL;
     if(prec != NULL){
         curr->padre = prec;
-        if(valore_distanza < prec->distanza)
+        if(valore < prec->distanza)
             prec->figlio_sx = curr;
         else
             prec->figlio_dx = curr;
@@ -90,26 +92,37 @@ void aggiungi_stazione(char *input){
         root_tree_stazioni = curr;
     }
     printf("aggiunta\n");
+    int numero_stazioni = estrai_valore(&buffer);
+    while(i < numero_stazioni){
+        valore = estrai_valore(&buffer);
+        aggiungi_auto_A(curr, valore);
+        i++;
+    }
     return;
 }
 
 //DEMOLISCE STAZIONE
-void demolisci_stazione(char *input){
+void demolisci_stazione(){
     //TODO
 }
 
-//AGGIUNGE AUTO
-void aggiungi_auto(char *input){
+//AGGIUNGE AUTO DATA IN INPUT DA AGGIUNGI_STAZIONE
+void aggiungi_auto_A(stazione curr, unsigned int valore){
+    //TODO
+}
+
+//AGGIUNGE AUTO DATA IN INPUT DAL COMANDO DEDICATO
+void aggiungi_auto_B(){
     //TODO
 }
 
 //ROTTAMA AUTO
-void rottama_auto(char *input){
+void rottama_auto(){
     //TODO
 }
 
 //PIANIFICA PERCORSO
-void pianifica_percorso(char *input){
+void pianifica_percorso(){
     input_placeholder = 19;
     unsigned int stazione_partenza = estrai_valore(&buffer);
     unsigned int stazione_arrivo = estrai_valore(&buffer);
