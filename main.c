@@ -108,10 +108,33 @@ void rottama_auto(char *input){
     //TODO
 }
 
-//PIANFIICA PERCORSO
+//PIANIFICA PERCORSO
 void pianifica_percorso(char *input){
+    input_placeholder = 19;
+    unsigned int stazione_partenza = estrai_valore(&buffer);
+    unsigned int stazione_arrivo = estrai_valore(&buffer);
+    if(stazione_partenza == stazione_arrivo){
+        printf("%u\n", stazione_partenza);
+    }
+    else{
+        if(stazione_partenza < stazione_arrivo)
+            pianifica_percorso_fwd(stazione_partenza, stazione_arrivo);
+        else
+            pianifica_percorso_bwd(stazione_partenza, stazione_arrivo);
+    }
+    return;
+}
+
+//PIANFICA PERCORSO "IN AVANTI"
+void pianifica_percorso_fwd(unsigned int stazione_partenza, unsigned int stazione_arrivo){
     //TODO
 }
+
+//PIANIFICA PERCORSO "AL CONTRARIO"
+void pianifica_percorso_bwd(unsigned int stazione_partenza, unsigned int stazione_arrivo){
+    //TODO
+}
+
 
 int main() {
     input_reader();
