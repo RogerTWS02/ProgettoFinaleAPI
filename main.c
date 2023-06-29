@@ -187,7 +187,39 @@ void aggiungi_auto_B(){
 
 //ROTTAMA AUTO
 void rottama_auto(){
-    //TODO
+    input_placeholder = 13;
+    stazione stazione_destinazione = ricerca_stazione(root_tree_stazioni, estrai_valore(&buffer));
+    if(stazione_destinazione == NULL){
+        printf("non rottamata\n");
+        return;}
+    automobile catorcio = ricerca_automobile(stazione_destinazione->parco_macchine, estrai_valore(&buffer));
+    if(catorcio == NULL)
+        printf("non rottamata\n");
+    else{
+        if(catorcio->quantity_exc > 0)
+            catorcio->quantity_exc--;
+        else{
+            automobile sottoalbero = NULL;
+            if(catorcio->figlio_sx != NULL)
+                sottoalbero = catorcio->figlio_sx;
+            else
+                sottoalbero = catorcio->figlio_dx;
+            if(sottoalbero != NULL)
+                sottoalbero->padre = catorcio->padre;
+            if(catorcio->padre == NULL)
+                stazione_destinazione->parco_macchine = sottoalbero;
+            else{
+                automobile temp = catorcio->padre;
+                if(catorcio == temp->figlio_sx)
+                    temp->figlio_sx = sottoalbero;
+                else
+                    temp->figlio_dx = sottoalbero;
+            }
+            free(catorcio);
+        }
+        printf("rottamata\n");
+    }
+    return;
 }
 
 //PIANIFICA PERCORSO
