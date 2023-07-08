@@ -1,3 +1,5 @@
+// "Ex nihilo nihil fit"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -118,7 +120,30 @@ void aggiungi_stazione(){
 
 //DEMOLISCE STAZIONE
 void demolisci_stazione(){
-    //TODO
+    input_placeholder = 19;
+    stazione current = ricerca_stazione(root_tree_stazioni, estrai_valore(&buffer));
+    if(current == NULL){
+        printf("non demolita\n");
+        return;}
+    stazione sottoalbero = NULL;
+    if(current->figlio_sx != NULL)
+        sottoalbero = current->figlio_sx;
+    else
+        sottoalbero = current->figlio_dx;
+    if(sottoalbero != NULL)
+        sottoalbero->padre = current->padre;
+    if(current->padre == NULL)
+        root_tree_stazioni = sottoalbero;
+    else{
+    stazione temp = current->padre;
+    if(current == temp->figlio_sx)
+        temp->figlio_sx = sottoalbero;
+    else
+        temp->figlio_dx = sottoalbero;
+    }
+    free(current);
+    printf("demolita\n");
+    return;
 }
 
 //AGGIUNGE AUTO DATA IN INPUT DA AGGIUNGI_STAZIONE
