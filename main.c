@@ -126,6 +126,11 @@ void aggiungi_auto_A(stazione current, unsigned int valore){
     int i = 0;
     while(current->parco_macchine[i] != 0 && current->parco_macchine[i] > valore)
         i++;
+    if(i == 0){
+        current->parco_macchine[0] = valore;
+        current->parco_macchine[1] = 0;
+        return;
+    }
     unsigned int temp = current->parco_macchine[i];
     while(temp != 0 && i < 512){
         current->parco_macchine[i] = valore;
@@ -160,6 +165,9 @@ void rottama_auto(){
     input_placeholder = 13;
     stazione current = ricerca_stazione(root_tree_stazioni, estrai_valore(&buffer));
     if(current == NULL){
+        printf("non rottamata\n");
+        return;}
+    if(current->parco_macchine[0] == 0){
         printf("non rottamata\n");
         return;}
     unsigned int valore = estrai_valore(&buffer);
