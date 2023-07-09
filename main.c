@@ -15,6 +15,12 @@ typedef struct stazione{
     struct stazione *padre, *figlio_dx, *figlio_sx;
 } *stazione;
 
+//Struttura del nodo della lista delle stazioni di un percorso
+typedef struct stazione_percorso{
+    unsigned int distanza;
+    struct stazione_del_percorso *next;
+} *stazione_percorso;
+
 //Dichiarazione della radice dell'albero delle stazioni come variabile globale
 stazione root_tree_stazioni = NULL;
 
@@ -69,6 +75,46 @@ stazione ricerca_stazione(stazione root_tree_stazioni, unsigned int valore){
             curr = curr->figlio_sx;
     }
     return NULL;
+}
+
+//Ricerca successore di un determinato nodo dell'albero delle stazioni
+stazione successore(stazione current){
+    if(current->figlio_dx != NULL)
+        return minimo(current->figlio_dx);
+    stazione temp = current->padre;
+    while(temp != NULL && current == temp->figlio_dx){
+        current = temp;
+        temp = temp->padre;
+    }
+    return temp;
+}
+
+//Ricerca del minimo di un albero
+stazione minimo(stazione current){
+    while(current->figlio_sx != NULL)
+        current = current->figlio_sx;
+    return current;
+}
+
+//Aggiunge un nodo ad una lista
+void aggiungi_in_lista(stazione_percorso ultimo_nodo, unsigned int valore){
+    ultimo_nodo->next = malloc(sizeof(struct stazione_percorso));
+    stazione_percorso temp = ultimo_nodo->next;
+    temp->distanza = valore;
+    temp->next = NULL;
+    return;
+}
+
+//Dealloca un'intera lista, data la testa
+void dealloca_lista(stazione_percorso nodo){
+    stazione_percorso temp = nodo->next;
+    while(temp != NULL){
+        free(nodo);
+        nodo = temp;
+        temp = temp->next;
+    }
+    free(nodo);
+    return;
 }
 
 //AGGIUNGE STAZIONE
@@ -245,12 +291,28 @@ void pianifica_percorso(){
 }
 
 //PIANFICA PERCORSO "IN AVANTI"
-void pianifica_percorso_fwd(unsigned int stazione_partenza, unsigned int stazione_arrivo){
-    //TODO
+void pianifica_percorso_fwd(unsigned int valore_stazione_partenza, unsigned int valore_stazione_arrivo){
+    stazione current = ricerca_stazione(root_tree_stazioni, valore_stazione_partenza);
+    if(current->parco_macchine[0] >= (valore_stazione_arrivo - valore_stazione_partenza)){
+        printf("%u %u\n", valore_stazione_partenza, valore_stazione_arrivo);
+        return;}
+    stazione stazione_arrivo = ricerca_stazione(root_tree_stazioni, valore_stazione_arrivo);
+    unsigned int migliore_macchina;
+    unsigned int chilometraggio_limite = 0;
+    stazione_percorso testa = malloc(sizeof(struct stazione_percorso));
+    testa->distanza = valore_stazione_partenza;
+    testa->next = NULL;
+    stazione_percorso temp = testa;
+    
 }
 
 //PIANIFICA PERCORSO "AL CONTRARIO"
-void pianifica_percorso_bwd(unsigned int stazione_partenza, unsigned int stazione_arrivo){
+void pianifica_percorso_bwd(unsigned int valore_stazione_partenza, unsigned int valore_stazione_arrivo){
+    stazione stazione_partenza = ricerca_stazione(root_tree_stazioni, valore_stazione_partenza);
+    if(stazione_partenza->parco_macchine[0] >= (valore_stazione_partenza - valore_stazione_arrivo)){
+        printf("%u %u\n", valore_stazione_partenza, valore_stazione_arrivo);
+        return;}
+    stazione stazione_arrivo = ricerca_stazione(root_tree_stazioni, valore_stazione_arrivo);
     //TODO
 }
 
