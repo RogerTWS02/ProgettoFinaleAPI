@@ -117,6 +117,18 @@ void dealloca_lista(stazione_percorso nodo){
     return;
 }
 
+//Stampa gli elementi di una lista, data la testa
+void stampa_percorso(stazione_percorso nodo, unsigned int stazione_arrivo){
+    printf("%u", nodo->distanza);
+    nodo = nodo->next;
+    while(nodo != NULL){
+        printf(" %u", nodo->distanza);
+        nodo = nodo->next;
+    }
+    printf(" %u\n", stazione_arrivo);
+    return;
+}
+
 //AGGIUNGE STAZIONE
 void aggiungi_stazione(){
     int i = 0;
@@ -296,23 +308,53 @@ void pianifica_percorso_fwd(unsigned int valore_stazione_partenza, unsigned int 
     if(current->parco_macchine[0] >= (valore_stazione_arrivo - valore_stazione_partenza)){
         printf("%u %u\n", valore_stazione_partenza, valore_stazione_arrivo);
         return;}
-    stazione stazione_arrivo = ricerca_stazione(root_tree_stazioni, valore_stazione_arrivo);
-    unsigned int migliore_macchina;
-    unsigned int chilometraggio_limite = 0;
+    unsigned int massimo_chilometraggio = valore_stazione_partenza + current->parco_macchine[0];
+    unsigned int temp_migliore_stazione;
+    unsigned int temp_massima_distanza = 0;
     stazione_percorso testa = malloc(sizeof(struct stazione_percorso));
     testa->distanza = valore_stazione_partenza;
     testa->next = NULL;
-    stazione_percorso temp = testa;
-    
+    stazione_percorso temp_lista_percorso = testa;
+    while(massimo_chilometraggio < valore_stazione_arrivo){
+        current = successore(current);
+        if(current == NULL){
+            printf("nessun percorso\n");
+            return;}
+        else{
+        while(current->distanza < massimo_chilometraggio){
+            if(current != NULL){
+                printf("nessun percorso\n");
+                return;
+            }
+            else{
+            if((current->distanza + current->parco_macchine[0]) > temp_massima_distanza){
+                temp_migliore_stazione = current->distanza;
+                temp_massima_distanza = current->distanza + current->parco_macchine[0];
+                }
+            current = successore(current);
+            }
+        }}
+        aggiungi_in_lista(temp_lista_percorso, temp_migliore_stazione);
+        temp_lista_percorso = temp_lista_percorso->next;
+        while(temp_massima_distanza < current->distanza && current != NULL)
+            current = successore(current);
+        if(current == NULL){
+            printf("nessun percorso\n");
+            return;}
+        current = current->padre;
+    }
+    massimo_chilometraggio = current->distanza + current->parco_macchine[0];
+    stampa_percorso(testa, valore_stazione_arrivo);
+    dealloca_lista(testa);
+    return;
 }
 
 //PIANIFICA PERCORSO "AL CONTRARIO"
 void pianifica_percorso_bwd(unsigned int valore_stazione_partenza, unsigned int valore_stazione_arrivo){
-    stazione stazione_partenza = ricerca_stazione(root_tree_stazioni, valore_stazione_partenza);
-    if(stazione_partenza->parco_macchine[0] >= (valore_stazione_partenza - valore_stazione_arrivo)){
+    stazione current = ricerca_stazione(root_tree_stazioni, valore_stazione_partenza);
+    if(current->parco_macchine[0] >= (valore_stazione_partenza - valore_stazione_arrivo)){
         printf("%u %u\n", valore_stazione_partenza, valore_stazione_arrivo);
         return;}
-    stazione stazione_arrivo = ricerca_stazione(root_tree_stazioni, valore_stazione_arrivo);
     //TODO
 }
 
