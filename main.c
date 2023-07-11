@@ -240,7 +240,7 @@ void demolisci_stazione()
 // AGGIUNGE AUTO DATA IN INPUT DAL COMANDO DEDICATO
 void aggiungi_auto_B()
 {
-    input_placeholder = 16;
+    input_placeholder = 14;
     stazione current = ricerca_stazione(root_tree_stazioni, estrai_valore(buffer));
     if (current == NULL)
     {
@@ -339,6 +339,7 @@ void pianifica_percorso_fwd(unsigned int valore_stazione_partenza, unsigned int 
     testa->distanza = valore_stazione_partenza;
     testa->next = NULL;
     stazione_percorso temp_lista_percorso = testa;
+    //stazione temporaneo = current;
     while (massimo_chilometraggio < valore_stazione_arrivo)
     {
         current = successore(current);
@@ -351,7 +352,7 @@ void pianifica_percorso_fwd(unsigned int valore_stazione_partenza, unsigned int 
         else
         {
             massimo_chilometraggio = current->distanza + current->parco_macchine[0];
-            while (current->distanza < massimo_chilometraggio)
+            while (current->distanza <= massimo_chilometraggio)
             {
                 if (current == NULL)
                 {
@@ -370,17 +371,15 @@ void pianifica_percorso_fwd(unsigned int valore_stazione_partenza, unsigned int 
         if(current == NULL)
         {
             printf("nessun percorso\n");
-            return;
-        }
-        while (current != NULL && temp_massima_distanza < current->distanza)
-            current = successore(current);
-        if(current == NULL)
-        {
-            stampa_percorso(testa, valore_stazione_arrivo);
             dealloca_lista(testa);
             return;
         }
-        current = current->padre;
+        while (current != NULL && temp_massima_distanza < current->distanza)
+        {
+            //temporaneo = current;
+            current = successore(current);
+        }
+        //current = temporaneo;
         massimo_chilometraggio = current->distanza + current->parco_macchine[0];
     }
     stampa_percorso(testa, valore_stazione_arrivo);
@@ -503,11 +502,13 @@ void input_handler(char *input)
 void input_reader()
 {
     if (fgets(buffer, 5200, stdin))
+    {
         useless = 1;
+        input_placeholder = 0;
+        input_handler(buffer);
+    }
     else
         useless = 0;
-    input_placeholder = 0;
-    input_handler(buffer);
     return;
 }
 
