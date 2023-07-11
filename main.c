@@ -7,6 +7,7 @@
 
 char buffer[5200];
 int input_placeholder;
+uint8_t useless = 1;
 
 // Struttura del nodo dell'albero delle stazioni
 typedef struct stazione
@@ -78,13 +79,13 @@ stazione successore(stazione current)
 }
 
 // Aggiunge un nodo ad una lista
-void aggiungi_in_lista(stazione_percorso ultimo_nodo, unsigned int valore)
+stazione_percorso aggiungi_in_lista(stazione_percorso ultimo_nodo, unsigned int valore)
 {
     ultimo_nodo->next = malloc(sizeof(struct stazione_percorso));
     stazione_percorso temp = ultimo_nodo->next;
     temp->distanza = valore;
     temp->next = NULL;
-    return;
+    return ultimo_nodo->next;
 }
 
 // Dealloca un'intera lista, data la testa
@@ -119,21 +120,27 @@ void stampa_percorso(stazione_percorso nodo, unsigned int stazione_arrivo)
 void aggiungi_auto_A(stazione current, unsigned int valore)
 {
     int i = 0;
-    while (current->parco_macchine[i] != 0 && current->parco_macchine[i] > valore)
+    while (current->parco_macchine[i] != 0 && current->parco_macchine[i] >= valore)
         i++;
-    if (i == 0)
+    if (i == 0 && current->parco_macchine[i+1] == 0)
     {
         current->parco_macchine[0] = valore;
         current->parco_macchine[1] = 0;
         return;
     }
+    if(current->parco_macchine[i] == 0)
+    {
+        current->parco_macchine[i] = valore;
+        current->parco_macchine[i+1] = 0;
+        return;
+    }
     unsigned int temp = current->parco_macchine[i];
-    while (temp != 0 && i < 512)
+    while (valore != 0 && i < 512)
     {
         current->parco_macchine[i] = valore;
         valore = temp;
+        temp = current->parco_macchine[i+1];
         i++;
-        temp = current->parco_macchine[i];
     }
     if (i != 512)
         current->parco_macchine[i] = 0;
@@ -314,6 +321,12 @@ void rottama_auto()
 void pianifica_percorso_fwd(unsigned int valore_stazione_partenza, unsigned int valore_stazione_arrivo)
 {
     stazione current = ricerca_stazione(root_tree_stazioni, valore_stazione_partenza);
+    stazione stazione_arrivo = ricerca_stazione(root_tree_stazioni, valore_stazione_arrivo);
+    if(current == NULL || stazione_arrivo == NULL)
+    {
+        printf("nessun percorso\n");
+        return;
+    }
     if (current->parco_macchine[0] >= (valore_stazione_arrivo - valore_stazione_partenza))
     {
         printf("%u %u\n", valore_stazione_partenza, valore_stazione_arrivo);
@@ -329,43 +342,47 @@ void pianifica_percorso_fwd(unsigned int valore_stazione_partenza, unsigned int 
     while (massimo_chilometraggio < valore_stazione_arrivo)
     {
         current = successore(current);
-        if (current == NULL)
+        if (current == NULL || current == stazione_arrivo)
         {
             printf("nessun percorso\n");
+            dealloca_lista(testa);
             return;
         }
         else
         {
+            massimo_chilometraggio = current->distanza + current->parco_macchine[0];
             while (current->distanza < massimo_chilometraggio)
             {
-                if (current != NULL)
+                if (current == NULL)
                 {
                     printf("nessun percorso\n");
                     return;
                 }
-                else
-                {
                     if ((current->distanza + current->parco_macchine[0]) > temp_massima_distanza)
                     {
                         temp_migliore_stazione = current->distanza;
                         temp_massima_distanza = current->distanza + current->parco_macchine[0];
                     }
                     current = successore(current);
-                }
             }
         }
-        aggiungi_in_lista(temp_lista_percorso, temp_migliore_stazione);
-        temp_lista_percorso = temp_lista_percorso->next;
-        while (temp_massima_distanza < current->distanza && current != NULL)
-            current = successore(current);
-        if (current == NULL)
+        temp_lista_percorso = aggiungi_in_lista(temp_lista_percorso, temp_migliore_stazione);
+        if(current == NULL)
         {
             printf("nessun percorso\n");
             return;
         }
+        while (current != NULL && temp_massima_distanza < current->distanza)
+            current = successore(current);
+        if(current == NULL)
+        {
+            stampa_percorso(testa, valore_stazione_arrivo);
+            dealloca_lista(testa);
+            return;
+        }
         current = current->padre;
+        massimo_chilometraggio = current->distanza + current->parco_macchine[0];
     }
-    massimo_chilometraggio = current->distanza + current->parco_macchine[0];
     stampa_percorso(testa, valore_stazione_arrivo);
     dealloca_lista(testa);
     return;
@@ -375,6 +392,12 @@ void pianifica_percorso_fwd(unsigned int valore_stazione_partenza, unsigned int 
 void pianifica_percorso_bwd(unsigned int valore_stazione_partenza, unsigned int valore_stazione_arrivo)
 {
     stazione current = ricerca_stazione(root_tree_stazioni, valore_stazione_partenza);
+    stazione stazione_arrivo = ricerca_stazione(root_tree_stazioni, valore_stazione_arrivo);
+    if(current == NULL || stazione_arrivo == NULL)
+    {
+        printf("nessun percorso\n");
+        return;
+    }
     if (current->parco_macchine[0] >= (valore_stazione_partenza - valore_stazione_arrivo))
     {
         printf("%u %u\n", valore_stazione_partenza, valore_stazione_arrivo);
@@ -390,16 +413,16 @@ void pianifica_percorso_bwd(unsigned int valore_stazione_partenza, unsigned int 
     while (massimo_chilometraggio > valore_stazione_arrivo)
     {
         current = current->padre;
-        if (current == NULL)
-        {
+        if (current == NULL || current == stazione_arrivo){
             printf("nessun percorso\n");
+            dealloca_lista(testa);
             return;
         }
         else
         {
             while (current->distanza > massimo_chilometraggio)
             {
-                if (current != NULL)
+                if (current == NULL)
                 {
                     printf("nessun percorso\n");
                     return;
@@ -415,15 +438,9 @@ void pianifica_percorso_bwd(unsigned int valore_stazione_partenza, unsigned int 
                 }
             }
         }
-        aggiungi_in_lista(temp_lista_percorso, temp_migliore_stazione);
-        temp_lista_percorso = temp_lista_percorso->next;
+        temp_lista_percorso = aggiungi_in_lista(temp_lista_percorso, temp_migliore_stazione);
         while (temp_massima_distanza > current->distanza && current != NULL)
             current = current->padre;
-        if (current == NULL)
-        {
-            printf("nessun percorso\n");
-            return;
-        }
         current = current->padre;
     }
     massimo_chilometraggio = current->distanza - current->parco_macchine[0];
@@ -485,14 +502,18 @@ void input_handler(char *input)
 // Legge riga per riga da input redirection e le passa, una per una, a input_handler
 void input_reader()
 {
-    while (fgets(buffer, 5200, stdin))
-        input_placeholder = 0;
+    if (fgets(buffer, 5200, stdin))
+        useless = 1;
+    else
+        useless = 0;
+    input_placeholder = 0;
     input_handler(buffer);
     return;
 }
 
 int main()
 {
-    input_reader();
+    while (useless == 1)
+        input_reader();
     return 0;
 }

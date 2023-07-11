@@ -1,3 +1,3 @@
 bash compile.sh
-./main < LALA > LALA
-diff LOLO LOLO
+./main < 1.txt > output.txt
+diff 1out.txt output.txt

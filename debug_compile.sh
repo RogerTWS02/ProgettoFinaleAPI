@@ -1,1 +1,1 @@
-gcc -Wall -Werror -std=gnu11 -O2 -lm -g3 -o main main.c
+gcc -Wall -Werror -std=gnu11 -lm -g3 -o main main.c
