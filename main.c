@@ -205,35 +205,179 @@ void aggiungi_stazione()
     return;
 }
 
-// DEMOLISCE STAZIONE
-void demolisci_stazione()
+//DEMOLISCE STAZIONE IN CASO SPECIFICO
+void demolisci_stazione_B(stazione current)
 {
-    input_placeholder = 19;
-    stazione current = ricerca_stazione(root_tree_stazioni, estrai_valore(buffer));
     if (current == NULL)
     {
         printf("non demolita\n");
         return;
     }
-    stazione sottoalbero = NULL;
-    if (current->figlio_sx != NULL)
-        sottoalbero = current->figlio_sx;
-    else
-        sottoalbero = current->figlio_dx;
-    if (sottoalbero != NULL)
-        sottoalbero->padre = current->padre;
-    if (current->padre == NULL)
-        root_tree_stazioni = sottoalbero;
-    else
+    if(current->figlio_sx == NULL && current->figlio_dx == NULL)
     {
-        stazione temp = current->padre;
-        if (current == temp->figlio_sx)
-            temp->figlio_sx = sottoalbero;
+        if(root_tree_stazioni == current)
+        {
+            root_tree_stazioni = NULL;
+            free(current);
+            printf("demolita\n");
+            return;
+        }
+        if(current == current->padre->figlio_sx)
+        {
+            current->padre->figlio_sx = NULL;
+            free(current);
+            printf("demolita\n");
+            return;
+        }
         else
-            temp->figlio_dx = sottoalbero;
+        {
+            current->padre->figlio_dx = NULL;
+            free(current);
+            printf("demolita\n");
+            return;
+        }
     }
-    free(current);
-    printf("demolita\n");
+    if(current->figlio_sx == NULL || current->figlio_dx == NULL)
+    {
+        if(current->figlio_dx == NULL)
+        {
+            if(current == current->padre->figlio_sx)
+            {
+                current->padre->figlio_sx = current->figlio_sx;
+                current->figlio_sx->padre = current->padre;
+                if(current == root_tree_stazioni)
+                    root_tree_stazioni = current->figlio_sx;
+                free(current);
+                printf("demolita\n");
+                return;
+            }
+            else
+            {
+                current->padre->figlio_dx = current->figlio_sx;
+                current->figlio_sx->padre = current->padre;
+                if(current == root_tree_stazioni)
+                    root_tree_stazioni = current->figlio_sx;
+                free(current);
+                printf("demolita\n");
+                return;
+            }
+        }
+        else
+        {
+            if(current == current->padre->figlio_sx)
+            {
+                current->padre->figlio_sx = current->figlio_dx;
+                current->figlio_dx->padre = current->padre;
+                if(current == root_tree_stazioni)
+                    root_tree_stazioni = current->figlio_dx;
+                free(current);
+                printf("demolita\n");
+                return;
+            }
+            else
+            {
+                current->padre->figlio_dx = current->figlio_dx;
+                current->figlio_dx->padre = current->padre;
+                if(current == root_tree_stazioni)
+                    root_tree_stazioni = current->figlio_dx;
+                free(current);
+                printf("demolita\n");
+                return;
+            }
+        }
+    }
+    stazione temp = successore(current);
+    current->distanza = temp->distanza;
+    demolisci_stazione_B(temp);
+    return;
+}
+
+// DEMOLISCE STAZIONE DA COMANDO DEDICATO
+void demolisci_stazione_A()
+{
+    input_placeholder = 19;
+        stazione current = ricerca_stazione(root_tree_stazioni, estrai_valore(buffer));
+    if (current == NULL)
+    {
+        printf("non demolita\n");
+        return;
+    }
+    if(current->figlio_sx == NULL && current->figlio_dx == NULL)
+    {
+        if(root_tree_stazioni == current)
+        {
+            root_tree_stazioni = NULL;
+            free(current);
+            printf("demolita\n");
+            return;
+        }
+        if(current == current->padre->figlio_sx)
+        {
+            current->padre->figlio_sx = NULL;
+            free(current);
+            printf("demolita\n");
+            return;
+        }
+        else
+        {
+            current->padre->figlio_dx = NULL;
+            free(current);
+            printf("demolita\n");
+            return;
+        }
+    }
+    if(current->figlio_sx == NULL || current->figlio_dx == NULL)
+    {
+        if(current->figlio_dx == NULL)
+        {
+            if(current == current->padre->figlio_sx)
+            {
+                current->padre->figlio_sx = current->figlio_sx;
+                current->figlio_sx->padre = current->padre;
+                if(current == root_tree_stazioni)
+                    root_tree_stazioni = current->figlio_sx;
+                free(current);
+                printf("demolita\n");
+                return;
+            }
+            else
+            {
+                current->padre->figlio_dx = current->figlio_sx;
+                current->figlio_sx->padre = current->padre;
+                if(current == root_tree_stazioni)
+                    root_tree_stazioni = current->figlio_sx;
+                free(current);
+                printf("demolita\n");
+                return;
+            }
+        }
+        else
+        {
+            if(current == current->padre->figlio_sx)
+            {
+                current->padre->figlio_sx = current->figlio_dx;
+                current->figlio_dx->padre = current->padre;
+                if(current == root_tree_stazioni)
+                    root_tree_stazioni = current->figlio_dx;
+                free(current);
+                printf("demolita\n");
+                return;
+            }
+            else
+            {
+                current->padre->figlio_dx = current->figlio_dx;
+                current->figlio_dx->padre = current->padre;
+                if(current == root_tree_stazioni)
+                    root_tree_stazioni = current->figlio_dx;
+                free(current);
+                printf("demolita\n");
+                return;
+            }
+        }
+    }
+    stazione temp = successore(current);
+    current->distanza = temp->distanza;
+    demolisci_stazione_B(temp);
     return;
 }
 
@@ -317,103 +461,22 @@ void rottama_auto()
     return;
 }
 
-//Trova sosta candidata
-stazione trova_sosta_candidata(stazione current, unsigned int valore)
-{
-    stazione temporaneo = current;
-    while (current != NULL && current->distanza <= valore)
-        {
-            temporaneo = current;
-            current = successore(current);
-        }
-        current = temporaneo;
-    return current;
-}
-
 // PIANFICA PERCORSO "IN AVANTI"
 void pianifica_percorso_fwd(unsigned int valore_stazione_partenza, unsigned int valore_stazione_arrivo)
 {
-    stazione current = ricerca_stazione(root_tree_stazioni, valore_stazione_partenza);
-    stazione stazione_arrivo = ricerca_stazione(root_tree_stazioni, valore_stazione_arrivo);
+    /*stazione current = ricerca_stazione(root_tree_stazioni, valore_stazione_partenza);
+    stazione stazione_arrivo = ricerca_stazione(root_tree_stazioni, valore_stazione_arrivo);    
     if(current == NULL || stazione_arrivo == NULL)
     {
         printf("nessun percorso\n");
         return;
     }
-    if (current->parco_macchine[0] >= (valore_stazione_arrivo - valore_stazione_partenza))
+    if(current->parco_macchine[0] >= valore_stazione_arrivo - valore_stazione_partenza)
     {
-        printf("%u %u\n", valore_stazione_partenza, valore_stazione_arrivo);
+        printf("%u %u", valore_stazione_partenza, valore_stazione_arrivo);
         return;
-    }
-    unsigned int massimo_chilometraggio = valore_stazione_partenza + current->parco_macchine[0];
-    unsigned int temp_migliore_stazione = 0;
-    unsigned int temp_massima_distanza = 0;
-    stazione_percorso testa = malloc(sizeof(struct stazione_percorso));
-    testa->distanza = valore_stazione_partenza;
-    testa->next = NULL;
-    stazione_percorso temp_lista_percorso = testa;
-    //stazione temp_sosta_candidata = NULL; //NEW
-    stazione temporaneo = current;
-    while (massimo_chilometraggio < valore_stazione_arrivo)
-    {
-        if(current == NULL)
-        {
-            printf("nessun percorso\n");
-            dealloca_lista(testa);
-            return;
-        }
-        current = successore(current);
-        //stazione sosta_candidata = current; //NEW
-        if (current == NULL || current->distanza == valore_stazione_arrivo)
-        {
-            printf("nessun percorso\n");
-            dealloca_lista(testa);
-            return;
-        }
-        else
-        {
-            if(current->distanza > massimo_chilometraggio)
-            {
-                printf("nessun percorso\n");
-                dealloca_lista(testa);
-                return;
-            }
-
-            while (current->distanza <= massimo_chilometraggio)
-            {
-                if ((current->distanza + current->parco_macchine[0]) > temp_massima_distanza)
-                {
-                    temp_migliore_stazione = current->distanza;
-                    temp_massima_distanza = current->distanza + current->parco_macchine[0];
-                }
-                if(temp_massima_distanza >= valore_stazione_arrivo)
-                {
-                    aggiungi_in_lista(temp_lista_percorso, temp_migliore_stazione);
-                    stampa_percorso(testa, valore_stazione_arrivo);
-                    dealloca_lista(testa);
-                    return;
-                }
-                current = successore(current);
-                if(current == NULL)
-                {
-                    printf("nessun percorso\n");
-                    dealloca_lista(testa);
-                    return;
-                }
-            }
-        }
-        temp_lista_percorso = aggiungi_in_lista(temp_lista_percorso, temp_migliore_stazione);
-        while (current != NULL && current->distanza <= temp_massima_distanza)
-        {
-            temporaneo = current;
-            current = successore(current);
-        }
-        current = temporaneo;
-        massimo_chilometraggio = current->distanza + current->parco_macchine[0];
-    }
-    aggiungi_in_lista(temp_lista_percorso, current->distanza);
-    stampa_percorso(testa, valore_stazione_arrivo);
-    dealloca_lista(testa);
+    }*/
+    printf("PIANIFICA PERCORSO\n");
     return;
 }
 
@@ -421,72 +484,19 @@ void pianifica_percorso_fwd(unsigned int valore_stazione_partenza, unsigned int 
 void pianifica_percorso_bwd(unsigned int valore_stazione_partenza, unsigned int valore_stazione_arrivo)
 {
     /*stazione current = ricerca_stazione(root_tree_stazioni, valore_stazione_partenza);
-    stazione stazione_arrivo = ricerca_stazione(root_tree_stazioni, valore_stazione_arrivo);
+    stazione stazione_arrivo = ricerca_stazione(root_tree_stazioni, valore_stazione_arrivo);    
     if(current == NULL || stazione_arrivo == NULL)
     {
         printf("nessun percorso\n");
         return;
     }
-    if (current->parco_macchine[0] >= (valore_stazione_partenza - valore_stazione_arrivo))
+    if(current->parco_macchine[0] >= valore_stazione_partenza - valore_stazione_arrivo)
     {
-        printf("%u %u\n", valore_stazione_partenza, valore_stazione_arrivo);
+        printf("%u %u", valore_stazione_partenza, valore_stazione_arrivo);
         return;
-    }
-    unsigned int massimo_chilometraggio = valore_stazione_partenza - current->parco_macchine[0];
-    unsigned int temp_migliore_stazione = 0;
-    unsigned int temp_massima_distanza = 0;
-    stazione_percorso testa = malloc(sizeof(struct stazione_percorso));
-    testa->distanza = valore_stazione_partenza;
-    testa->next = NULL;
-    stazione_percorso temp_lista_percorso = testa;
-    stazione temporaneo = current;
-    while (massimo_chilometraggio > valore_stazione_arrivo)
-    {
-        current = successore(current);
-        if (current == NULL || current == stazione_arrivo)
-        {
-            printf("nessun percorso\n");
-            dealloca_lista(testa);
-            return;
-        }
-        else
-        {
-            //massimo_chilometraggio = current->distanza + current->parco_macchine[0]; //385/354
-            while (current->distanza >= massimo_chilometraggio) //con uguale o senza?
-            {
-                if (current == NULL)
-                {
-                    printf("nessun percorso\n");
-                    return;
-                }
-                    if ((current->distanza + current->parco_macchine[0]) < temp_massima_distanza)
-                    {
-                        temp_migliore_stazione = current->distanza;
-                        temp_massima_distanza = current->distanza - current->parco_macchine[0];
-                    }
-                    current = current->padre;
-            }
-        }
-        temp_lista_percorso = aggiungi_in_lista(temp_lista_percorso, temp_migliore_stazione);
-        if(current == NULL)
-        {
-            printf("nessun percorso\n");
-            dealloca_lista(testa);
-            return;
-        }
-        while (current != NULL && temp_massima_distanza >= current->distanza) //con uguale o senza?
-        {
-            temporaneo = current;
-            current = current->padre;
-        }
-        current = temporaneo;
-        massimo_chilometraggio = current->distanza - current->parco_macchine[0];
-    }
-    aggiungi_in_lista(temp_lista_percorso, current->distanza);
-    stampa_percorso(testa, valore_stazione_arrivo);
-    dealloca_lista(testa);
-    return;*/
+    }*/
     printf("PIANIFICA PERCORSO INVERSO\n");
+    return;
 }
 
 // PIANIFICA PERCORSO
@@ -524,7 +534,7 @@ void input_handler(char *input)
     }
     if (input[0] == 'd')
     {
-        demolisci_stazione();
+        demolisci_stazione_A();
         return;
     };
     if (input[0] == 'r')
@@ -555,7 +565,11 @@ void input_reader()
 
 int main()
 {
+    int k = 0;
     while (useless == 1)
+    {
         input_reader();
+        k++;
+    }
     return 0;
 }

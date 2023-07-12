@@ -1,3 +1,3 @@
 bash compile.sh
-./main < 2.txt > output.txt
-diff 2out.txt output.txt
+./main < test/open_11.txt > output.txt
+diff test/open_11.output.txt output.txt
