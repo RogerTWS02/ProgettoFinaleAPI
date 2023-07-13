@@ -122,7 +122,7 @@ void aggiungi_auto_A(stazione current, unsigned int valore)
     int i = 0;
     while (current->parco_macchine[i] != 0 && current->parco_macchine[i] >= valore)
         i++;
-    if (i == 0 && current->parco_macchine[i+1] == 0)
+    if (i == 0 && current->parco_macchine[i] == 0 && current->parco_macchine[i+1] == 0)
     {
         current->parco_macchine[0] = valore;
         current->parco_macchine[1] = 0;
@@ -205,6 +205,36 @@ void aggiungi_stazione()
     return;
 }
 
+//Copia il parco macchine
+void trasferisci_parco_macchine(stazione current, stazione successore)
+{
+    current->parco_macchine[512] = successore->parco_macchine[512];
+    int i = 0;
+    if(successore->parco_macchine[0] == 0)
+    {
+        while(current->parco_macchine[i] != 0 && i<512)
+        {
+            current->parco_macchine[i] = 0;
+            i++;
+        }
+        return;
+    }
+    while(successore->parco_macchine[i] != 0 && i<512)
+    {
+        current->parco_macchine[i] = successore->parco_macchine[i];
+        i++;
+    }
+    if(current->parco_macchine[i] != 0 && i<512)
+    {
+        while(current->parco_macchine[i] != 0 && i<512)
+        {
+            current->parco_macchine[i] = 0;
+            i++;
+        }
+    }
+    return;
+}
+
 //DEMOLISCE STAZIONE IN CASO SPECIFICO
 void demolisci_stazione_B(stazione current)
 {
@@ -241,6 +271,14 @@ void demolisci_stazione_B(stazione current)
     {
         if(current->figlio_dx == NULL)
         {
+            if(current == root_tree_stazioni)
+            {
+                root_tree_stazioni = current->figlio_sx;
+                current->figlio_sx->padre = NULL;
+                free(current);
+                printf("demolita\n");
+                return;
+            }
             if(current == current->padre->figlio_sx)
             {
                 current->padre->figlio_sx = current->figlio_sx;
@@ -264,6 +302,14 @@ void demolisci_stazione_B(stazione current)
         }
         else
         {
+            if(current == root_tree_stazioni)
+            {
+                root_tree_stazioni = current->figlio_dx;
+                current->figlio_dx->padre = NULL;
+                free(current);
+                printf("demolita\n");
+                return;
+            }
             if(current == current->padre->figlio_sx)
             {
                 current->padre->figlio_sx = current->figlio_dx;
@@ -288,6 +334,7 @@ void demolisci_stazione_B(stazione current)
     }
     stazione temp = successore(current);
     current->distanza = temp->distanza;
+    trasferisci_parco_macchine(current, temp);
     demolisci_stazione_B(temp);
     return;
 }
@@ -330,12 +377,18 @@ void demolisci_stazione_A()
     {
         if(current->figlio_dx == NULL)
         {
+            if(current == root_tree_stazioni)
+            {
+                root_tree_stazioni = current->figlio_sx;
+                current->figlio_sx->padre = NULL;
+                free(current);
+                printf("demolita\n");
+                return;
+            }
             if(current == current->padre->figlio_sx)
             {
                 current->padre->figlio_sx = current->figlio_sx;
                 current->figlio_sx->padre = current->padre;
-                if(current == root_tree_stazioni)
-                    root_tree_stazioni = current->figlio_sx;
                 free(current);
                 printf("demolita\n");
                 return;
@@ -344,8 +397,6 @@ void demolisci_stazione_A()
             {
                 current->padre->figlio_dx = current->figlio_sx;
                 current->figlio_sx->padre = current->padre;
-                if(current == root_tree_stazioni)
-                    root_tree_stazioni = current->figlio_sx;
                 free(current);
                 printf("demolita\n");
                 return;
@@ -353,6 +404,14 @@ void demolisci_stazione_A()
         }
         else
         {
+            if(current == root_tree_stazioni)
+            {
+                root_tree_stazioni = current->figlio_dx;
+                current->figlio_dx->padre = NULL;
+                free(current);
+                printf("demolita\n");
+                return;
+            }
             if(current == current->padre->figlio_sx)
             {
                 current->padre->figlio_sx = current->figlio_dx;
@@ -377,6 +436,7 @@ void demolisci_stazione_A()
     }
     stazione temp = successore(current);
     current->distanza = temp->distanza;
+    trasferisci_parco_macchine(current, temp);
     demolisci_stazione_B(temp);
     return;
 }
@@ -413,7 +473,7 @@ void rottama_auto()
         printf("non rottamata\n");
         return;
     }
-    if (current->parco_macchine[0] == 0)
+    if (current->parco_macchine[0] == 0 && current->parco_macchine[512] == 0)
     {
         printf("non rottamata\n");
         return;
@@ -422,7 +482,11 @@ void rottama_auto()
     if (valore == 0)
     {
         if (current->parco_macchine[512] > 0)
+        {
             current->parco_macchine[512] -= 1;
+            printf("rottamata\n");
+            return;
+        }
         else
             printf("non rottamata\n");
         return;
