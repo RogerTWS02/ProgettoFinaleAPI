@@ -525,18 +525,6 @@ void rottama_auto()
     return;
 }
 
-//Trova sosta candidata
-unsigned int trova_sosta_candidata(stazione current, unsigned int valore)
-{
-    stazione temporaneo = current;
-    while (current != NULL && current->distanza <= valore)
-        {
-            temporaneo = current;
-            current = successore(current);
-        }
-    return temporaneo->distanza;
-}
-
 // PIANFICA PERCORSO "IN AVANTI"
 void pianifica_percorso_fwd(unsigned int valore_stazione_partenza, unsigned int valore_stazione_arrivo)
 {
