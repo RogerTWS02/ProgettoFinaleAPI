@@ -525,10 +525,22 @@ void rottama_auto()
     return;
 }
 
+//Trova sosta candidata
+unsigned int trova_sosta_candidata(stazione current, unsigned int valore)
+{
+    stazione temporaneo = current;
+    while (current != NULL && current->distanza <= valore)
+        {
+            temporaneo = current;
+            current = successore(current);
+        }
+    return temporaneo->distanza;
+}
+
 // PIANFICA PERCORSO "IN AVANTI"
 void pianifica_percorso_fwd(unsigned int valore_stazione_partenza, unsigned int valore_stazione_arrivo)
 {
-    /*stazione current = ricerca_stazione(root_tree_stazioni, valore_stazione_partenza);
+    stazione current = ricerca_stazione(root_tree_stazioni, valore_stazione_partenza);
     stazione stazione_arrivo = ricerca_stazione(root_tree_stazioni, valore_stazione_arrivo);    
     if(current == NULL || stazione_arrivo == NULL)
     {
@@ -539,15 +551,14 @@ void pianifica_percorso_fwd(unsigned int valore_stazione_partenza, unsigned int 
     {
         printf("%u %u", valore_stazione_partenza, valore_stazione_arrivo);
         return;
-    }*/
-    printf("PIANIFICA PERCORSO\n");
-    return;
+    }
+    //TODO
 }
 
 // PIANIFICA PERCORSO "AL CONTRARIO"
 void pianifica_percorso_bwd(unsigned int valore_stazione_partenza, unsigned int valore_stazione_arrivo)
 {
-    /*stazione current = ricerca_stazione(root_tree_stazioni, valore_stazione_partenza);
+    stazione current = ricerca_stazione(root_tree_stazioni, valore_stazione_partenza);
     stazione stazione_arrivo = ricerca_stazione(root_tree_stazioni, valore_stazione_arrivo);    
     if(current == NULL || stazione_arrivo == NULL)
     {
@@ -558,9 +569,8 @@ void pianifica_percorso_bwd(unsigned int valore_stazione_partenza, unsigned int 
     {
         printf("%u %u", valore_stazione_partenza, valore_stazione_arrivo);
         return;
-    }*/
-    printf("PIANIFICA PERCORSO INVERSO\n");
-    return;
+    }
+    //TODO
 }
 
 // PIANIFICA PERCORSO
