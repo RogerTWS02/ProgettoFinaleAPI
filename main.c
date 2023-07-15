@@ -13,7 +13,7 @@ uint8_t useless = 1;
 typedef struct stazione
 {
     unsigned int distanza;
-    unsigned int parco_macchine[513];
+    int parco_macchine[513];
     struct stazione *padre, *figlio_dx, *figlio_sx;
 } *stazione;
 
@@ -116,37 +116,6 @@ void stampa_percorso(stazione_percorso nodo, unsigned int stazione_arrivo)
     return;
 }
 
-// AGGIUNGE AUTO DATA IN INPUT DA AGGIUNGI_STAZIONE
-void aggiungi_auto_A(stazione current, unsigned int valore)
-{
-    int i = 0;
-    while (current->parco_macchine[i] != 0 && current->parco_macchine[i] >= valore)
-        i++;
-    if (i == 0 && current->parco_macchine[i] == 0 && current->parco_macchine[i+1] == 0)
-    {
-        current->parco_macchine[0] = valore;
-        current->parco_macchine[1] = 0;
-        return;
-    }
-    if(current->parco_macchine[i] == 0)
-    {
-        current->parco_macchine[i] = valore;
-        current->parco_macchine[i+1] = 0;
-        return;
-    }
-    unsigned int temp = current->parco_macchine[i];
-    while (valore != 0 && i < 512)
-    {
-        current->parco_macchine[i] = valore;
-        valore = temp;
-        temp = current->parco_macchine[i+1];
-        i++;
-    }
-    if (i != 512)
-        current->parco_macchine[i] = 0;
-    return;
-}
-
 // AGGIUNGE STAZIONE
 void aggiungi_stazione()
 {
@@ -170,8 +139,7 @@ void aggiungi_stazione()
     }
     curr = malloc(sizeof(struct stazione));
     curr->distanza = valore;
-    curr->parco_macchine[0] = 0;
-    curr->parco_macchine[512] = 0;
+    curr->parco_macchine[0] = -1;
     curr->figlio_dx = NULL;
     curr->figlio_sx = NULL;
     if (prec != NULL)
@@ -189,49 +157,40 @@ void aggiungi_stazione()
     }
     printf("aggiunta\n");
     int numero_stazioni = estrai_valore(buffer);
+    int migliore_auto = 0;
     while (i < numero_stazioni)
     {
         valore = estrai_valore(buffer);
-        if (valore == 0)
+        if(valore > migliore_auto)
         {
-            curr->parco_macchine[512] += 1;
+            migliore_auto = valore;
+            curr->parco_macchine[512] = migliore_auto;
         }
-        else
-        {
-            aggiungi_auto_A(curr, valore);
-            i++;
-        }
+        curr->parco_macchine[i] = valore;
+        i++;
     }
+    if(i<512)
+        curr->parco_macchine[i] = -1;
     return;
 }
 
 //Copia il parco macchine
 void trasferisci_parco_macchine(stazione current, stazione successore)
 {
-    current->parco_macchine[512] = successore->parco_macchine[512];
-    int i = 0;
-    if(successore->parco_macchine[0] == 0)
+    if(successore->parco_macchine[0] == -1)
     {
-        while(current->parco_macchine[i] != 0 && i<512)
-        {
-            current->parco_macchine[i] = 0;
-            i++;
-        }
+        current->parco_macchine[0] = -1;
         return;
     }
-    while(successore->parco_macchine[i] != 0 && i<512)
+    current->parco_macchine[512] = successore->parco_macchine[512];
+    int i = 0;
+    while(successore->parco_macchine[i] != -1 && i < 512)
     {
         current->parco_macchine[i] = successore->parco_macchine[i];
         i++;
     }
-    if(current->parco_macchine[i] != 0 && i<512)
-    {
-        while(current->parco_macchine[i] != 0 && i<512)
-        {
-            current->parco_macchine[i] = 0;
-            i++;
-        }
-    }
+    if(i < 512)
+        current->parco_macchine[i] = -1;
     return;
 }
 
@@ -442,23 +401,24 @@ void demolisci_stazione_A()
 }
 
 // AGGIUNGE AUTO DATA IN INPUT DAL COMANDO DEDICATO
-void aggiungi_auto_B()
+void aggiungi_auto()
 {
     input_placeholder = 14;
+    int i = 0;
     stazione current = ricerca_stazione(root_tree_stazioni, estrai_valore(buffer));
     if (current == NULL)
     {
         printf("non aggiunta\n");
         return;
     }
-    unsigned int valore = estrai_valore(buffer);
-    if (valore == 0)
-    {
-        current->parco_macchine[512] += 1;
-        printf("aggiunta\n");
-        return;
-    }
-    aggiungi_auto_A(current, valore);
+    int valore = estrai_valore(buffer);
+    if(valore > current->parco_macchine[512])
+        current->parco_macchine[512] = valore;
+    while(i < 512 && current->parco_macchine[i] != -1)
+        i++;
+    current->parco_macchine[i] = valore;
+    if(i < 511)
+        current->parco_macchine[i+1] = -1;
     printf("aggiunta\n");
     return;
 }
@@ -473,24 +433,12 @@ void rottama_auto()
         printf("non rottamata\n");
         return;
     }
-    if (current->parco_macchine[0] == 0 && current->parco_macchine[512] == 0)
+    if (current->parco_macchine[0] == -1)
     {
         printf("non rottamata\n");
         return;
     }
-    unsigned int valore = estrai_valore(buffer);
-    if (valore == 0)
-    {
-        if (current->parco_macchine[512] > 0)
-        {
-            current->parco_macchine[512] -= 1;
-            printf("rottamata\n");
-            return;
-        }
-        else
-            printf("non rottamata\n");
-        return;
-    }
+    int valore = estrai_valore(buffer);
     int i = 0;
     while (current->parco_macchine[i] != valore && i < 512)
         i++;
@@ -501,25 +449,27 @@ void rottama_auto()
     }
     if (i == 511)
     {
-        current->parco_macchine[i] = 0;
+        current->parco_macchine[i] = -1;
         printf("rottamata\n");
         return;
     }
     valore = current->parco_macchine[i + 1];
-    if (valore == 0)
+    if (valore == -1)
     {
-        current->parco_macchine[i] = 0;
+        current->parco_macchine[i] = -1;
+        current->parco_macchine[i + 1] = 0;
         printf("rottamata\n");
     }
     else
     {
-        while (valore != 0 && i < 512)
+        while (valore != -1 && i < 512)
         {
             current->parco_macchine[i] = valore;
             valore = current->parco_macchine[i + 1];
             i++;
         }
-        current->parco_macchine[i] = 0;
+        if(i < 512)
+            current->parco_macchine[i] = -1;
         printf("rottamata\n");
     }
     return;
@@ -591,7 +541,7 @@ void input_handler(char *input)
     }
     if (input[0] == 'a' && input[9] == 'a')
     {
-        aggiungi_auto_B();
+        aggiungi_auto();
         return;
     }
     if (input[0] == 'd')
@@ -627,7 +577,7 @@ void input_reader()
 
 int main()
 {
-    int k = 0;
+    int k = 1;
     while (useless == 1)
     {
         input_reader();
