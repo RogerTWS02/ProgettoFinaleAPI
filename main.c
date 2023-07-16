@@ -21,7 +21,7 @@ typedef struct stazione
 typedef struct stazione_percorso
 {
     unsigned int distanza;
-    struct stazione_percorso *next;
+    struct stazione_percorso *next, *padre;
 } *stazione_percorso;
 
 // Dichiarazione della radice dell'albero delle stazioni come variabile globale
@@ -78,6 +78,28 @@ stazione successore(stazione current)
     return temp;
 }
 
+//Trova il massimo di un BST
+stazione massimo(stazione current)
+{
+    while (current->figlio_dx != NULL)
+        current = current->figlio_dx;
+    return current;
+}
+
+//Trova il predecessore di un determinato nodo in un BST
+stazione predecessore(stazione current)
+{
+    if (current->figlio_sx != NULL)
+        return massimo(current->figlio_sx);
+    stazione temp = current->padre;
+    while (temp != NULL && current == temp->figlio_sx)
+    {
+        current = temp;
+        temp = temp->padre;
+    }
+    return temp;
+}
+
 // Aggiunge un nodo ad una lista
 stazione_percorso aggiungi_in_lista(stazione_percorso ultimo_nodo, unsigned int valore)
 {
@@ -85,6 +107,7 @@ stazione_percorso aggiungi_in_lista(stazione_percorso ultimo_nodo, unsigned int 
     stazione_percorso temp = ultimo_nodo->next;
     temp->distanza = valore;
     temp->next = NULL;
+    temp->padre = ultimo_nodo;
     return ultimo_nodo->next;
 }
 
@@ -103,16 +126,18 @@ void dealloca_lista(stazione_percorso nodo)
 }
 
 // Stampa gli elementi di una lista, data la testa
-void stampa_percorso(stazione_percorso nodo, unsigned int stazione_arrivo)
+void stampa_percorso_fwd(stazione_percorso nodo, unsigned int partenza, unsigned int arrivo)
 {
-    printf("%u", nodo->distanza);
-    nodo = nodo->next;
-    while (nodo != NULL)
+    printf("%u ", partenza);
+    nodo = nodo->padre;
+    while (nodo->distanza != arrivo)
     {
-        printf(" %u", nodo->distanza);
-        nodo = nodo->next;
+        printf("%u ", nodo->distanza);
+        if(nodo->padre == NULL)
+            break;
+        nodo = nodo->padre;
     }
-    printf(" %u\n", stazione_arrivo);
+    printf("%u\n", arrivo);
     return;
 }
 
@@ -440,57 +465,158 @@ void rottama_auto()
     }
     int valore = estrai_valore(buffer);
     int i = 0;
-    while (current->parco_macchine[i] != valore && i < 512)
+    if(valore < current->parco_macchine[512])
+    {
+        while (current->parco_macchine[i] != valore && i < 512)
         i++;
-    if (i == 512)
-    {
-        printf("non rottamata\n");
+        if (i == 512)
+        {
+            printf("non rottamata\n");
+            return;
+        }
+        if (i == 511)
+        {
+            current->parco_macchine[i] = -1;
+            printf("rottamata\n");
+            return;
+        }
+        valore = current->parco_macchine[i + 1];
+        if (valore == -1)
+        {
+            current->parco_macchine[i] = -1;
+            current->parco_macchine[i + 1] = 0;
+            printf("rottamata\n");
+        }
+        else
+        {
+            while (valore != -1 && i < 512)
+            {
+                current->parco_macchine[i] = valore;
+                valore = current->parco_macchine[i + 1];
+                i++;
+            }
+            if(i < 512)
+                current->parco_macchine[i] = -1;
+            printf("rottamata\n");
+        }
         return;
-    }
-    if (i == 511)
-    {
-        current->parco_macchine[i] = -1;
-        printf("rottamata\n");
-        return;
-    }
-    valore = current->parco_macchine[i + 1];
-    if (valore == -1)
-    {
-        current->parco_macchine[i] = -1;
-        current->parco_macchine[i + 1] = 0;
-        printf("rottamata\n");
     }
     else
     {
-        while (valore != -1 && i < 512)
+        int migliore_auto = 0;
+        while (current->parco_macchine[i] != valore && i < 512)
         {
-            current->parco_macchine[i] = valore;
-            valore = current->parco_macchine[i + 1];
+            if (current->parco_macchine[i] > migliore_auto)
+                migliore_auto = current->parco_macchine[i];
             i++;
         }
-        if(i < 512)
+        if (i == 512)
+        {
+            printf("non rottamata\n");
+            return;
+        }
+        if (i == 511)
+        {
             current->parco_macchine[i] = -1;
-        printf("rottamata\n");
+            current->parco_macchine[512] = migliore_auto;
+            printf("rottamata\n");
+            return;
+        }
+        valore = current->parco_macchine[i + 1];
+        if (valore == -1)
+        {
+            current->parco_macchine[i] = -1;
+            current->parco_macchine[i + 1] = 0;
+            current->parco_macchine[512] = migliore_auto;
+            printf("rottamata\n");
+        }
+        else
+        {
+            while (valore != -1 && i < 512)
+            {
+                current->parco_macchine[i] = valore;
+                if(valore > migliore_auto)
+                    migliore_auto = valore;
+                valore = current->parco_macchine[i + 1];
+                i++;
+            }
+            if(i < 512)
+                current->parco_macchine[i] = -1;
+            current->parco_macchine[512] = migliore_auto;
+            printf("rottamata\n");
+        }
+        return;
     }
-    return;
 }
 
 // PIANFICA PERCORSO "IN AVANTI"
 void pianifica_percorso_fwd(unsigned int valore_stazione_partenza, unsigned int valore_stazione_arrivo)
 {
-    stazione current = ricerca_stazione(root_tree_stazioni, valore_stazione_partenza);
-    stazione stazione_arrivo = ricerca_stazione(root_tree_stazioni, valore_stazione_arrivo);    
-    if(current == NULL || stazione_arrivo == NULL)
+    /*stazione stazione_partenza = ricerca_stazione(root_tree_stazioni, valore_stazione_partenza);
+    stazione current = ricerca_stazione(root_tree_stazioni, valore_stazione_arrivo);    
+    if(current == NULL || stazione_partenza == NULL)
     {
         printf("nessun percorso\n");
         return;
     }
-    if(current->parco_macchine[0] >= valore_stazione_arrivo - valore_stazione_partenza)
+    if(current->parco_macchine[512] >= valore_stazione_arrivo - valore_stazione_partenza)
     {
         printf("%u %u", valore_stazione_partenza, valore_stazione_arrivo);
         return;
     }
-    //TODO
+    if(current->padre != NULL)
+    {
+        if(predecessore(current)->distanza == valore_stazione_partenza)
+        {
+            printf("nessun percorso\n");
+            return;
+        }
+    }
+    else
+    {
+        printf("nessun percorso\n");
+        return;
+    }
+    stazione_percorso testa = malloc(sizeof(struct stazione_percorso));
+    testa->distanza = current->distanza;
+    testa->next = NULL;
+    testa->padre = NULL;
+    stazione_percorso ultimo_nodo = testa;
+    stazione temp = predecessore(current);
+    unsigned int migliore_stazione = 0;
+    while(current->distanza > valore_stazione_partenza)
+    {
+        while(temp->distanza > valore_stazione_partenza)
+        {
+            if(temp->distanza + temp->parco_macchine[512] >= current->distanza)
+                migliore_stazione = temp->distanza;
+            temp = predecessore(temp);
+            if(temp == NULL)
+            {
+                printf("nessun percorso\n");
+                dealloca_lista(testa);
+                return;
+            }
+        }
+        ultimo_nodo = aggiungi_in_lista(ultimo_nodo, migliore_stazione);
+        current = ricerca_stazione(root_tree_stazioni, migliore_stazione);
+        if(current == NULL)
+        {
+            printf("nessun percorso\n");
+            dealloca_lista(testa);
+            return;
+        }
+        temp = predecessore(current);
+        if(temp == NULL)
+        {
+            printf("nessun percorso\n");
+            dealloca_lista(testa);
+            return;
+        }
+    }
+    stampa_percorso_fwd(ultimo_nodo, valore_stazione_partenza, valore_stazione_arrivo);
+    dealloca_lista(testa);
+    return;*/
 }
 
 // PIANIFICA PERCORSO "AL CONTRARIO"
@@ -503,11 +629,12 @@ void pianifica_percorso_bwd(unsigned int valore_stazione_partenza, unsigned int 
         printf("nessun percorso\n");
         return;
     }
-    if(current->parco_macchine[0] >= valore_stazione_partenza - valore_stazione_arrivo)
+    if(current->parco_macchine[512] >= valore_stazione_partenza - valore_stazione_arrivo)
     {
         printf("%u %u", valore_stazione_partenza, valore_stazione_arrivo);
         return;
     }
+    printf("PIANIFICA AL CONTRARIO\n");
     //TODO
 }
 
