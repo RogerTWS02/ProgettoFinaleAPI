@@ -129,7 +129,6 @@ void dealloca_lista(stazione_percorso nodo)
 void stampa_percorso_fwd(stazione_percorso nodo, unsigned int partenza, unsigned int arrivo)
 {
     printf("%u ", partenza);
-    nodo = nodo->padre;
     while (nodo->distanza != arrivo)
     {
         printf("%u ", nodo->distanza);
@@ -165,6 +164,7 @@ void aggiungi_stazione()
     curr = malloc(sizeof(struct stazione));
     curr->distanza = valore;
     curr->parco_macchine[0] = -1;
+    curr->parco_macchine[512] = 0;
     curr->figlio_dx = NULL;
     curr->figlio_sx = NULL;
     if (prec != NULL)
@@ -181,21 +181,24 @@ void aggiungi_stazione()
         root_tree_stazioni = curr;
     }
     printf("aggiunta\n");
-    int numero_stazioni = estrai_valore(buffer);
+    int numero_auto = estrai_valore(buffer);
+    if(numero_auto == 0)
+    {
+        curr->parco_macchine[0] = -1;
+        return;
+    }
     int migliore_auto = 0;
-    while (i < numero_stazioni)
+    while (i < numero_auto)
     {
         valore = estrai_valore(buffer);
         if(valore > migliore_auto)
-        {
             migliore_auto = valore;
-            curr->parco_macchine[512] = migliore_auto;
-        }
         curr->parco_macchine[i] = valore;
         i++;
     }
     if(i<512)
         curr->parco_macchine[i] = -1;
+    curr->parco_macchine[512] = migliore_auto;
     return;
 }
 
@@ -467,9 +470,9 @@ void rottama_auto()
     int i = 0;
     if(valore < current->parco_macchine[512])
     {
-        while (current->parco_macchine[i] != valore && i < 512)
-        i++;
-        if (i == 512)
+        while (current->parco_macchine[i] != valore && i < 512 && current->parco_macchine[i] != -1)
+            i++;
+        if (i == 512 || current->parco_macchine[i] == -1)
         {
             printf("non rottamata\n");
             return;
@@ -489,14 +492,13 @@ void rottama_auto()
         }
         else
         {
-            while (valore != -1 && i < 512)
+            while (valore != -1 && i < 511)
             {
                 current->parco_macchine[i] = valore;
-                valore = current->parco_macchine[i + 1];
+                valore = current->parco_macchine[i + 2];
                 i++;
             }
-            if(i < 512)
-                current->parco_macchine[i] = -1;
+            current->parco_macchine[i] = -1;
             printf("rottamata\n");
         }
         return;
@@ -504,13 +506,13 @@ void rottama_auto()
     else
     {
         int migliore_auto = 0;
-        while (current->parco_macchine[i] != valore && i < 512)
+        while (current->parco_macchine[i] != valore && i < 512 && current->parco_macchine[i] != -1)
         {
             if (current->parco_macchine[i] > migliore_auto)
                 migliore_auto = current->parco_macchine[i];
             i++;
         }
-        if (i == 512)
+        if (i == 512 || current->parco_macchine[i] == -1)
         {
             printf("non rottamata\n");
             return;
@@ -532,16 +534,15 @@ void rottama_auto()
         }
         else
         {
-            while (valore != -1 && i < 512)
+            while (valore != -1 && i < 511)
             {
                 current->parco_macchine[i] = valore;
                 if(valore > migliore_auto)
                     migliore_auto = valore;
-                valore = current->parco_macchine[i + 1];
+                valore = current->parco_macchine[i + 2];
                 i++;
             }
-            if(i < 512)
-                current->parco_macchine[i] = -1;
+            current->parco_macchine[i] = -1;
             current->parco_macchine[512] = migliore_auto;
             printf("rottamata\n");
         }
@@ -552,7 +553,7 @@ void rottama_auto()
 // PIANFICA PERCORSO "IN AVANTI"
 void pianifica_percorso_fwd(unsigned int valore_stazione_partenza, unsigned int valore_stazione_arrivo)
 {
-    /*stazione stazione_partenza = ricerca_stazione(root_tree_stazioni, valore_stazione_partenza);
+    stazione stazione_partenza = ricerca_stazione(root_tree_stazioni, valore_stazione_partenza);
     stazione current = ricerca_stazione(root_tree_stazioni, valore_stazione_arrivo);    
     if(current == NULL || stazione_partenza == NULL)
     {
@@ -564,9 +565,10 @@ void pianifica_percorso_fwd(unsigned int valore_stazione_partenza, unsigned int 
         printf("%u %u", valore_stazione_partenza, valore_stazione_arrivo);
         return;
     }
-    if(current->padre != NULL)
+    stazione temp = predecessore(current);
+    if(temp != NULL)
     {
-        if(predecessore(current)->distanza == valore_stazione_partenza)
+        if(temp->distanza == valore_stazione_partenza)
         {
             printf("nessun percorso\n");
             return;
@@ -578,14 +580,19 @@ void pianifica_percorso_fwd(unsigned int valore_stazione_partenza, unsigned int 
         return;
     }
     stazione_percorso testa = malloc(sizeof(struct stazione_percorso));
-    testa->distanza = current->distanza;
+    testa->distanza = valore_stazione_arrivo;
     testa->next = NULL;
     testa->padre = NULL;
     stazione_percorso ultimo_nodo = testa;
-    stazione temp = predecessore(current);
     unsigned int migliore_stazione = 0;
-    while(current->distanza > valore_stazione_partenza)
+    while(current->distanza > valore_stazione_partenza && temp->distanza > valore_stazione_partenza)
     {
+        if(stazione_partenza->distanza + stazione_partenza->parco_macchine[512] >= current->distanza)
+        {
+            stampa_percorso_fwd(ultimo_nodo, valore_stazione_partenza, valore_stazione_arrivo);
+            dealloca_lista(testa);
+            return;
+        }
         while(temp->distanza > valore_stazione_partenza)
         {
             if(temp->distanza + temp->parco_macchine[512] >= current->distanza)
@@ -597,6 +604,12 @@ void pianifica_percorso_fwd(unsigned int valore_stazione_partenza, unsigned int 
                 dealloca_lista(testa);
                 return;
             }
+        }
+        if(migliore_stazione == ultimo_nodo->distanza)
+        {
+            printf("nessun percorso\n");
+            dealloca_lista(testa);
+            return;
         }
         ultimo_nodo = aggiungi_in_lista(ultimo_nodo, migliore_stazione);
         current = ricerca_stazione(root_tree_stazioni, migliore_stazione);
@@ -614,9 +627,12 @@ void pianifica_percorso_fwd(unsigned int valore_stazione_partenza, unsigned int 
             return;
         }
     }
-    stampa_percorso_fwd(ultimo_nodo, valore_stazione_partenza, valore_stazione_arrivo);
+    if(temp->distanza + temp->parco_macchine[512] >= current->distanza)
+        stampa_percorso_fwd(ultimo_nodo, valore_stazione_partenza, valore_stazione_arrivo);
+    else
+        printf("nessun percorso\n");
     dealloca_lista(testa);
-    return;*/
+    return;
 }
 
 // PIANIFICA PERCORSO "AL CONTRARIO"
@@ -634,7 +650,6 @@ void pianifica_percorso_bwd(unsigned int valore_stazione_partenza, unsigned int 
         printf("%u %u", valore_stazione_partenza, valore_stazione_arrivo);
         return;
     }
-    printf("PIANIFICA AL CONTRARIO\n");
     //TODO
 }
 

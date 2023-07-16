@@ -1,3 +1,4 @@
-bash compile.sh
-./main < test/open_1.txt > output.txt
-diff test/open_1.output.txt output.txt
+clear
+test=111
+./main < test/open_$test.txt > output.txt
+diff test/open_$test.output.txt output.txt
