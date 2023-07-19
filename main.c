@@ -2,12 +2,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 
 char buffer[5200];
 int input_placeholder;
-uint8_t useless = 1;
+short int useless = 1;
 
 // Struttura del nodo dell'albero delle stazioni
 typedef struct stazione
@@ -23,6 +22,12 @@ typedef struct stazione_percorso
     unsigned int distanza;
     struct stazione_percorso *next, *padre;
 } *stazione_percorso;
+
+typedef struct stazione_percorso_bwd
+{
+    unsigned int distanza;
+    struct stazione_percorso_bwd *next;
+} *stazione_percorso_bwd;
 
 // Dichiarazione della radice dell'albero delle stazioni come variabile globale
 stazione root_tree_stazioni = NULL;
@@ -100,6 +105,57 @@ stazione predecessore(stazione current)
     return temp;
 }
 
+stazione ricerca_ausiliaria(stazione current, unsigned int valore)
+{
+    stazione temp = current;
+    current = predecessore(current);
+    while(current != NULL)
+    {
+        if(current->distanza < valore)
+            return temp;
+        temp = current;
+        current = predecessore(current);
+    }
+    return temp;
+}
+
+//Cerca stazione candidata per pianifica bwd
+stazione ricerca_stazione_candidata(stazione current, unsigned int valore)
+{
+    current = predecessore(current);
+    if(current == NULL)
+        return NULL;
+    if(current->distanza < valore)
+        return NULL;
+    stazione migliore_stazione = current;
+    int limite_stazione = predecessore(migliore_stazione)->distanza + 1;
+    int temp;
+    current = predecessore(current);
+    while(current != NULL)
+    {
+        temp = current->distanza - current->parco_macchine[512];
+        if(current->distanza < valore)
+            return migliore_stazione;
+        if(temp == migliore_stazione->distanza - migliore_stazione->parco_macchine[512])
+            migliore_stazione = current;
+        else if(temp < migliore_stazione->distanza - migliore_stazione->parco_macchine[512])
+        {
+            migliore_stazione = current;
+            limite_stazione = ricerca_ausiliaria(migliore_stazione, temp)->distanza + 1;
+        }
+        else
+        {
+            if(temp < limite_stazione)
+            {
+                migliore_stazione = current;
+                limite_stazione = ricerca_ausiliaria(migliore_stazione, temp)->distanza + 1;
+            }
+        }
+        current = predecessore(current);
+    }
+    return NULL;
+}
+
 // Aggiunge un nodo ad una lista
 stazione_percorso aggiungi_in_lista(stazione_percorso ultimo_nodo, unsigned int valore)
 {
@@ -111,10 +167,32 @@ stazione_percorso aggiungi_in_lista(stazione_percorso ultimo_nodo, unsigned int 
     return ultimo_nodo->next;
 }
 
+stazione_percorso_bwd aggiungi_in_lista_bwd(stazione_percorso_bwd ultimo_nodo, unsigned int valore)
+{
+    ultimo_nodo->next = malloc(sizeof(struct stazione_percorso_bwd));
+    stazione_percorso_bwd temp = ultimo_nodo->next;
+    temp->distanza = valore;
+    temp->next = NULL;
+    return ultimo_nodo->next;
+}
+
 // Dealloca un'intera lista, data la testa
 void dealloca_lista(stazione_percorso nodo)
 {
     stazione_percorso temp = nodo->next;
+    while (temp != NULL)
+    {
+        free(nodo);
+        nodo = temp;
+        temp = temp->next;
+    }
+    free(nodo);
+    return;
+}
+
+void dealloca_lista_bwd(stazione_percorso_bwd nodo)
+{
+    stazione_percorso_bwd temp = nodo->next;
     while (temp != NULL)
     {
         free(nodo);
@@ -135,6 +213,17 @@ void stampa_percorso_fwd(stazione_percorso nodo, unsigned int partenza, unsigned
         if(nodo->padre == NULL)
             break;
         nodo = nodo->padre;
+    }
+    printf("%u\n", arrivo);
+    return;
+}
+
+void stampa_percorso_bwd(stazione_percorso_bwd current, unsigned int arrivo)
+{
+    while(current != NULL)
+    {
+        printf("%u ", current->distanza);
+        current = current->next;
     }
     printf("%u\n", arrivo);
     return;
@@ -650,7 +739,34 @@ void pianifica_percorso_bwd(unsigned int valore_stazione_partenza, unsigned int 
         printf("%u %u", valore_stazione_partenza, valore_stazione_arrivo);
         return;
     }
-    //TODO
+    stazione_percorso_bwd testa = malloc(sizeof(struct stazione_percorso_bwd));
+    testa->distanza = valore_stazione_partenza;
+    testa->next = NULL;
+    stazione_percorso_bwd ultimo_nodo = testa;
+    stazione stazione_candidata;
+    int temp;
+    while(current->distanza > valore_stazione_arrivo)
+    {
+        temp = current->distanza - current->parco_macchine[512];
+        if(temp < 0 || temp <= valore_stazione_arrivo)
+        {
+            stampa_percorso_bwd(testa, valore_stazione_arrivo);
+            dealloca_lista_bwd(testa);
+            return;
+        }
+        stazione_candidata = ricerca_stazione_candidata(current, temp);
+        if(stazione_candidata == NULL)
+        {
+            printf("nessun percorso\n");
+            dealloca_lista_bwd(testa);
+            return;
+        }
+        current = stazione_candidata;
+        ultimo_nodo = aggiungi_in_lista_bwd(ultimo_nodo, current->distanza);
+    }
+    stampa_percorso_bwd(testa, valore_stazione_arrivo);
+    dealloca_lista_bwd(testa);
+    return;
 }
 
 // PIANIFICA PERCORSO
@@ -660,9 +776,7 @@ void pianifica_percorso()
     unsigned int stazione_partenza = estrai_valore(buffer);
     unsigned int stazione_arrivo = estrai_valore(buffer);
     if (stazione_partenza == stazione_arrivo)
-    {
         printf("%u\n", stazione_partenza);
-    }
     else
     {
         if (stazione_partenza < stazione_arrivo)
@@ -720,7 +834,7 @@ void input_reader()
 int main()
 {
     int k = 1;
-    while (useless == 1)
+    while(useless == 1)
     {
         input_reader();
         k++;
