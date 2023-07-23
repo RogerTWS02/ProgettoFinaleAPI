@@ -128,7 +128,7 @@ stazione ricerca_stazione_candidata(stazione current, unsigned int valore, unsig
     if(current->distanza < valore)
         return NULL;
     stazione migliore_stazione = current;
-    int limite_stazione = predecessore(migliore_stazione)->distanza;
+    int limite_stazione = ricerca_ausiliaria(migliore_stazione, current->distanza - current->parco_macchine[512])->distanza;
     int temp, temp2;
     current = predecessore(current);
     while(current != NULL)
@@ -167,12 +167,10 @@ void fix_percorso_bwd(stazione_percorso_bwd current)
     stazione current_s = NULL;
     stazione intermedio_s = NULL;
     stazione stazione_candidata = NULL;
-    int limite_di_ricerca;
+    int limite_di_ricerca, temp;
     while(current != NULL)
     {
         intermedio = current->next;
-        if(intermedio == NULL)
-            return;
         finale = intermedio->next;
         if(finale == NULL)
             return;
@@ -182,7 +180,8 @@ void fix_percorso_bwd(stazione_percorso_bwd current)
         limite_di_ricerca = current_s->distanza - current_s->parco_macchine[512];
         while(intermedio_s->distanza >= limite_di_ricerca)
         {
-            if(intermedio_s->distanza - intermedio_s->parco_macchine[512] <= finale->distanza)
+            temp = intermedio_s->distanza - intermedio_s->parco_macchine[512];
+            if(temp <= finale->distanza)
                 stazione_candidata = intermedio_s;
             intermedio_s = predecessore(intermedio_s);
         }
@@ -801,10 +800,6 @@ void pianifica_percorso_bwd(unsigned int valore_stazione_partenza, unsigned int 
         current = stazione_candidata;
         ultimo_nodo = aggiungi_in_lista_bwd(ultimo_nodo, current->distanza);
     }
-    fix_percorso_bwd(testa);
-    stampa_percorso_bwd(testa, valore_stazione_arrivo);
-    dealloca_lista_bwd(testa);
-    return;
 }
 
 // PIANIFICA PERCORSO
@@ -829,30 +824,16 @@ void pianifica_percorso()
 void input_handler(char *input)
 {
     if (input[0] == 'a' && input[9] == 's')
-    {
         aggiungi_stazione();
-        return;
-    }
-    if (input[0] == 'a' && input[9] == 'a')
-    {
+    else if (input[0] == 'a' && input[9] == 'a')
         aggiungi_auto();
-        return;
-    }
-    if (input[0] == 'd')
-    {
+    else if (input[0] == 'd')
         demolisci_stazione_A();
-        return;
-    };
-    if (input[0] == 'r')
-    {
+    else if (input[0] == 'r')
         rottama_auto();
-        return;
-    }
-    if (input[0] == 'p')
-    {
+    else if (input[0] == 'p')
         pianifica_percorso();
-        return;
-    }
+    return;
 }
 
 // Legge riga per riga da input redirection e le passa, una per una, a input_handler
