@@ -27,6 +27,7 @@ typedef struct stazione_percorso_bwd
 {
     unsigned int distanza;
     struct stazione_percorso_bwd *next;
+    short int skip;
 } *stazione_percorso_bwd;
 
 // Dichiarazione della radice dell'albero delle stazioni come variabile globale
@@ -59,6 +60,29 @@ stazione ricerca_stazione(stazione root_tree_stazioni, unsigned int valore)
             curr = curr->figlio_sx;
     }
     return NULL;
+}
+
+void dealloca_lista_bwd(stazione_percorso_bwd nodo)
+{
+    stazione_percorso_bwd temp = nodo->next;
+    while (temp != NULL)
+    {
+        free(nodo);
+        nodo = temp;
+        temp = temp->next;
+    }
+    free(nodo);
+    return;
+}
+
+stazione_percorso_bwd aggiungi_in_lista_bwd(stazione_percorso_bwd ultimo_nodo, unsigned int valore, short int skip)
+{
+    ultimo_nodo->next = malloc(sizeof(struct stazione_percorso_bwd));
+    stazione_percorso_bwd temp = ultimo_nodo->next;
+    temp->distanza = valore;
+    temp->next = NULL;
+    temp->skip = skip;
+    return ultimo_nodo->next;
 }
 
 // Ricerca del minimo di un albero
@@ -159,8 +183,25 @@ stazione ricerca_stazione_candidata(stazione current, unsigned int valore, unsig
     return NULL;
 }
 
-//Fix del percorso bwd
-void fix_percorso_bwd(stazione_percorso_bwd current)
+void trova_skip(stazione_percorso_bwd current_originale, stazione_percorso_bwd current_nuova)
+{
+    short int i = 0;
+    while(i < 2)
+    {
+        current_originale = current_originale->next;
+        current_nuova = current_nuova->next;
+        if(current_originale == NULL || current_nuova == NULL)
+            return;
+        if(current_originale->distanza != current_nuova->distanza)
+            i++;
+        else if(i > 0)
+            i--;
+    }
+    current_originale->skip = 1;
+    return;
+}
+
+void fix_percorso_bwd_B(stazione_percorso_bwd current)
 {
     stazione_percorso_bwd intermedio = NULL;
     stazione_percorso_bwd finale = NULL;
@@ -174,6 +215,51 @@ void fix_percorso_bwd(stazione_percorso_bwd current)
         finale = intermedio->next;
         if(finale == NULL)
             return;
+        if(finale->skip != 1)
+        {
+            current_s = ricerca_stazione(root_tree_stazioni, current->distanza);
+            intermedio_s = ricerca_stazione(root_tree_stazioni, intermedio->distanza);
+            stazione_candidata = intermedio_s;
+            limite_di_ricerca = current_s->distanza - current_s->parco_macchine[512];
+            while(intermedio_s->distanza >= limite_di_ricerca)
+            {
+                temp = intermedio_s->distanza - intermedio_s->parco_macchine[512];
+                if(temp <= finale->distanza)
+                    stazione_candidata = intermedio_s;
+                intermedio_s = predecessore(intermedio_s);
+            }
+            intermedio->distanza = stazione_candidata->distanza;
+        }
+        current = current->next;
+    }
+}
+
+//Fix del percorso bwd
+void fix_percorso_bwd(stazione_percorso_bwd current)
+{
+    stazione_percorso_bwd testa_lista_originale = current;
+    stazione_percorso_bwd intermedio = NULL;
+    stazione_percorso_bwd finale = NULL;
+    stazione current_s = NULL;
+    stazione intermedio_s = NULL;
+    stazione stazione_candidata = NULL;
+    stazione_percorso_bwd testa_lista_nuova = malloc(sizeof(struct stazione_percorso_bwd));
+    stazione_percorso_bwd ultimo_nodo = testa_lista_nuova;
+    testa_lista_nuova->distanza = current->distanza;
+    testa_lista_nuova->next = NULL;
+    testa_lista_nuova->skip = 0;
+    int limite_di_ricerca, temp;
+    while(current != NULL)
+    {
+        intermedio = current->next;
+        finale = intermedio->next;
+        if(finale == NULL)
+        {
+            trova_skip(testa_lista_originale, testa_lista_nuova);
+            dealloca_lista_bwd(testa_lista_nuova);
+            fix_percorso_bwd_B(testa_lista_originale);
+            return;
+        }
         current_s = ricerca_stazione(root_tree_stazioni, current->distanza);
         intermedio_s = ricerca_stazione(root_tree_stazioni, intermedio->distanza);
         stazione_candidata = intermedio_s;
@@ -185,10 +271,9 @@ void fix_percorso_bwd(stazione_percorso_bwd current)
                 stazione_candidata = intermedio_s;
             intermedio_s = predecessore(intermedio_s);
         }
-        current->next->distanza = stazione_candidata->distanza;
+        ultimo_nodo = aggiungi_in_lista_bwd(ultimo_nodo, stazione_candidata->distanza, 0);
         current = current->next;
     }
-    return;
 }
 
 // Aggiunge un nodo ad una lista
@@ -202,32 +287,10 @@ stazione_percorso aggiungi_in_lista(stazione_percorso ultimo_nodo, unsigned int 
     return ultimo_nodo->next;
 }
 
-stazione_percorso_bwd aggiungi_in_lista_bwd(stazione_percorso_bwd ultimo_nodo, unsigned int valore)
-{
-    ultimo_nodo->next = malloc(sizeof(struct stazione_percorso_bwd));
-    stazione_percorso_bwd temp = ultimo_nodo->next;
-    temp->distanza = valore;
-    temp->next = NULL;
-    return ultimo_nodo->next;
-}
-
 // Dealloca un'intera lista, data la testa
 void dealloca_lista(stazione_percorso nodo)
 {
     stazione_percorso temp = nodo->next;
-    while (temp != NULL)
-    {
-        free(nodo);
-        nodo = temp;
-        temp = temp->next;
-    }
-    free(nodo);
-    return;
-}
-
-void dealloca_lista_bwd(stazione_percorso_bwd nodo)
-{
-    stazione_percorso_bwd temp = nodo->next;
     while (temp != NULL)
     {
         free(nodo);
@@ -798,7 +861,7 @@ void pianifica_percorso_bwd(unsigned int valore_stazione_partenza, unsigned int 
             return;
         }
         current = stazione_candidata;
-        ultimo_nodo = aggiungi_in_lista_bwd(ultimo_nodo, current->distanza);
+        ultimo_nodo = aggiungi_in_lista_bwd(ultimo_nodo, current->distanza, 0);
     }
 }
 
@@ -852,11 +915,7 @@ void input_reader()
 
 int main()
 {
-    int k = 1;
     while(useless == 1)
-    {
         input_reader();
-        k++;
-    }
     return 0;
 }
